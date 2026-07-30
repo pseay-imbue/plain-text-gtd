@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row with context %}
+
+{% block title %}{{ heading_text }} — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1>{{ heading_html | safe }}</h1>
+    <div class="view-head__meta">{{ items | length }} {{ count_label }}</div>
+</header>
+{% if blurb %}
+<p class="view-blurb">{{ blurb }}</p>
+{% endif %}
+
+{% if items %}
+<ul class="items">
+    {% for item in items %}
+        {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% else %}
+<div class="empty">{{ empty_text }}</div>
+{% endif %}
+{% endblock %}

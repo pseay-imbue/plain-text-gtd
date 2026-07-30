@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row with context %}
+
+{% block title %}{{ project.title }} — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1>{{ project.title }}</h1>
+    <div class="view-head__meta">
+        <a href="{{ url('projects') }}" style="color: inherit; text-decoration: none; border-bottom: 1px dotted;">← all projects</a>
+    </div>
+</header>
+
+<div class="item__meta" style="margin-top: -1rem; margin-bottom: 1rem;">
+    <span><b>{{ project.id }}</b></span>
+    {% if project.due_date %}<span class="annot--due">due {{ project.due_date.strftime('%a %d %b') }}</span>{% endif %}
+    {% if project.tags %}<span>#{{ project.tags | join(' #') }}</span>{% endif %}
+    <span>{{ children | length }} sub-actions</span>
+</div>
+
+<div class="item__actions" style="opacity: 1; margin-bottom: 1.5rem;">
+    <a class="act act--primary" href="#" data-copy-url="{{ url('api_plan', item_id=project.id) }}" data-copy-label="Plan block">Plan in chat</a>
+    <a class="act" href="#" data-copy-url="{{ url('api_handoff', item_id=project.id) }}" data-copy-label="Handoff block">Copy for handoff</a>
+    <a class="act" href="{{ url('edit_item', item_id=project.id) }}">Edit project</a>
+</div>
+
+<div class="project-shell__body-wrap" data-body-edit data-body-edit-url="{{ url('save_body', item_id=project.id) }}">
+    <div class="project-shell__body{% if not project.body %} project-shell__body--empty{% endif %}" data-body-view data-tooltip="Click to edit">
+        {% if project.body %}
+            {{ body_html | safe }}
+        {% else %}
+            <em>Click to add project notes…</em>
+        {% endif %}
+    </div>
+    <textarea class="project-shell__body-textarea" name="body" data-body-raw hidden>{{ project.body }}</textarea>
+</div>
+
+<div class="children-label">Sub-actions</div>
+{% if children %}
+<ul class="items">
+    {% for item in children %}
+        {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% endif %}
+
+<form class="add-child" method="post" action="{{ url('add_child', item_id=project.id) }}">
+    <span class="add-child__plus" aria-hidden="true">+</span>
+    <input
+        type="text"
+        name="title"
+        class="add-child__input"
+        placeholder="Add a sub-action…"
+        autocomplete="off"
+        autofocus
+        required>
+    <span class="add-child__hint">enter to add</span>
+</form>
+
+{% if not children %}
+<div class="empty empty--quiet">Or open this project in chat with “Plan in chat” to break it down.</div>
+{% endif %}
+{% endblock %}

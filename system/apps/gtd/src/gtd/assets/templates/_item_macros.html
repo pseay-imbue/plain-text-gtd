@@ -1,0 +1,171 @@
+{# Shared item-rendering macros. #}
+
+{# Custom dropdown widget (replaces native <select> popups). Uses
+   <details>/<summary> + a panel of submit buttons; each button submits
+   the parent form async via app.js. #}
+{# The option panel is built lazily by app.js on first open (from the shared
+   #gtd-picker-data blob), so we emit only the visible summary here — not every
+   option in every row. `values`/`projects` args are kept for call-site
+   compatibility but no longer expanded server-side. #}
+{%- macro picker_enum(action, name, current_value, values, variant="") -%}
+    <details class="cdrop {% if variant %}cdrop--{{ variant }}{% endif %}" data-cdrop data-picker="enum" data-action="{{ action }}" data-name="{{ name }}" data-current="{{ current_value or '' }}">
+        <summary class="cdrop__summary">{{ current_value or '—' }}</summary>
+    </details>
+{%- endmacro -%}
+
+{%- macro picker_parent(action, name, current_value, current_label, projects, exclude_id=None) -%}
+    <details class="cdrop cdrop--parent" data-cdrop data-picker="parent" data-action="{{ action }}" data-name="{{ name }}" data-current="{{ current_value or '' }}" data-exclude="{{ exclude_id or '' }}">
+        <summary class="cdrop__summary">{{ current_label }}</summary>
+    </details>
+{%- endmacro -%}
+
+{# Project row: distinct from a task row. Title clicks through to project
+   detail; primary action is Plan-in-chat. Used by the Projects view and
+   the Someday-projects section. #}
+{%- macro project_row(item, index=0) -%}
+    <li class="item item--project item--project-row" data-priority="{{ item.priority.value }}" data-status="{{ item.status.value }}">
+        <div>
+            <div class="item__title item__title--project">
+                <a href="{{ url('project_detail', item_id=item.id) }}">{{ item.title }}</a>
+            </div>
+            <div class="item__meta">
+                <span class="annot--project">project · {{ (child_counts.get(item.id) if child_counts else 0) or 0 }} sub-actions</span>
+                {{ picker_enum(
+                    action=url('set_priority', item_id=item.id),
+                    name='priority',
+                    current_value=item.priority.value,
+                    values=all_priorities | map(attribute='value') | list,
+                    variant='pri-' ~ item.priority.value,
+                ) }}
+                {{ picker_enum(
+                    action=url('set_status', item_id=item.id),
+                    name='status',
+                    current_value=item.status.value,
+                    values=all_statuses | map(attribute='value') | list,
+                    variant='status',
+                ) }}
+                {% if item.due_date %}<span class="annot--due">due {{ item.due_date.strftime('%a %d %b') }}</span>{% endif %}
+                {% if item.tags %}<span>#{{ item.tags | join(' #') }}</span>{% endif %}
+            </div>
+            {% if item.body %}<div class="item__body-preview" data-body-preview>{{ item.body | autolink | safe }}</div>{% endif %}
+        </div>
+        <div class="item__actions item__actions--always">
+            <a class="act act--primary" href="#" data-copy-url="{{ url('api_plan', item_id=item.id) }}" data-copy-label="Plan block">Plan</a>
+            <a class="act" href="{{ url('project_detail', item_id=item.id) }}">Open</a>
+            <a class="act" href="{{ url('edit_item', item_id=item.id) }}?back={{ current_path | urlencode }}">Edit</a>
+            <form method="post" action="{{ url('delete_item', item_id=item.id) }}" data-inline-submit data-row-delete style="display:inline; margin:0;">
+                <button class="icon-act icon-act--danger" type="submit" data-tooltip="Delete project (click twice to confirm)" aria-label="Delete">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10"/><path d="M5 4V2.5h6V4"/><path d="M4 4l1 10h6l1-10"/><path d="M7 7v5M9 7v5"/></svg>
+                </button>
+            </form>
+        </div>
+    </li>
+{%- endmacro -%}
+
+{%- macro item_row(item, parent_lookup=None, index=0, child=False) -%}
+    {%- set classes = ['item'] -%}
+    {%- if child -%}{%- set classes = classes + ['item--child'] -%}{%- endif -%}
+    {%- if item.is_project -%}{%- set classes = classes + ['item--project'] -%}{%- endif -%}
+    {%- if item.status.value == 'done' -%}{%- set classes = classes + ['item--done'] -%}{%- endif -%}
+    {%- if item.status.value == 'waiting' -%}{%- set classes = classes + ['item--status-waiting'] -%}{%- endif -%}
+    {%- if item.priority.value == 'high' -%}{%- set classes = classes + ['item--high'] -%}{%- endif -%}
+    {%- if item.priority.value == 'low' -%}{%- set classes = classes + ['item--low'] -%}{%- endif -%}
+    {%- if child and item.parent -%}
+        {%- set group_value = 'parent-' ~ item.parent -%}
+    {%- else -%}
+        {%- set group_value = 'loose' -%}
+    {%- endif -%}
+    <li class="{{ classes | join(' ') }}" data-priority="{{ item.priority.value }}" data-status="{{ item.status.value }}" data-quick="{{ '1' if item.quick else '0' }}" data-recur="{{ '1' if item.recur_weekdays else '0' }}" data-group="{{ group_value }}">
+        <form method="post" action="{{ url('check_item', item_id=item.id) }}" class="item__check-form" data-inline-submit style="margin:0; display:flex; align-items:center;">
+            <input type="checkbox" class="item__check" name="checked"                 {% if item.status.value == 'done' %}checked{% endif %}
+                aria-label="Mark done">
+        </form>
+        <div>
+            <div class="item__title" data-rename-url="{{ url('rename_item', item_id=item.id) }}" data-tooltip="Click to rename in place">{{ item.title }}</div>
+            <div class="item__meta">
+                {%- if item.is_project %}
+                    <span class="annot--project">project{% if child_counts and child_counts.get(item.id) %} · {{ child_counts.get(item.id) }} sub-actions{% endif %}</span>
+                {%- endif -%}
+                {%- if item.quick %}
+                    <span class="annot--quick">2 min</span>
+                {%- endif -%}
+                {{ picker_enum(
+                    action=url('set_priority', item_id=item.id),
+                    name='priority',
+                    current_value=item.priority.value,
+                    values=all_priorities | map(attribute='value') | list,
+                    variant='pri-' ~ item.priority.value,
+                ) }}
+                {{ picker_enum(
+                    action=url('set_status', item_id=item.id),
+                    name='status',
+                    current_value=item.status.value,
+                    values=all_statuses | map(attribute='value') | list,
+                    variant='status',
+                ) }}
+                {%- set ns = namespace(label='no project') -%}
+                {%- for p in all_projects -%}
+                    {%- if p.id == item.parent -%}{%- set ns.label = p.title -%}{%- endif -%}
+                {%- endfor -%}
+                {{ picker_parent(
+                    action=url('set_parent', item_id=item.id),
+                    name='parent',
+                    current_value=item.parent or '',
+                    current_label=ns.label,
+                    projects=all_projects,
+                    exclude_id=item.id,
+                ) }}
+                {%- if item.recur_weekdays %}
+                    <span class="annot--recur" title="Repeats on {{ item.recur_weekdays | map('weekday_label') | join(', ') }}">⟲ {{ item.recur_weekdays | map('weekday_short') | join('') }}</span>
+                {%- endif -%}
+                {%- if item.waiting_for %}
+                    <span class="annot--waiting">waiting on {{ item.waiting_for }}</span>
+                {%- endif -%}
+                {%- if item.contexts %}
+                    <span>{{ item.contexts | join(' · ') }}</span>
+                {%- endif -%}
+                {%- if item.tags %}
+                    <span>#{{ item.tags | join(' #') }}</span>
+                {%- endif -%}
+            </div>
+            <div class="item__meta item__meta--dates">
+                <form class="meta-edit" method="post" action="{{ url('set_due_date', item_id=item.id) }}" data-tooltip="Due date (deadline)" data-inline-submit>
+                    <span class="meta-edit__label">due</span>
+                    <input type="date" name="due_date" class="meta-edit__date {% if item.due_date %}meta-edit__date--due{% endif %}"
+                        value="{{ item.due_date.isoformat() if item.due_date else '' }}"
+                        aria-label="Due date">
+                </form>
+                <form class="meta-edit" method="post" action="{{ url('set_start_date', item_id=item.id) }}" data-tooltip="Start date (when to begin)" data-inline-submit>
+                    <span class="meta-edit__label">start</span>
+                    <input type="date" name="start_date" class="meta-edit__date {% if item.start_date %}meta-edit__date--start{% endif %}"
+                        value="{{ item.start_date.isoformat() if item.start_date else '' }}"
+                        aria-label="Start date">
+                </form>
+            </div>
+            {%- if item.body %}
+                <div class="item__body-preview" data-body-preview>{{ item.body | autolink | safe }}</div>
+            {%- endif -%}
+        </div>
+        <div class="item__actions">
+            <a class="icon-act" href="#" data-copy-url="{{ url('api_triage', item_id=item.id) }}" data-copy-label="Triage prompt" data-tooltip="Triage in chat" aria-label="Triage in chat">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h8M2 12h12"/></svg>
+            </a>
+            <a class="icon-act" href="#" data-copy-url="{{ url('api_handoff', item_id=item.id) }}" data-copy-label="Handoff block" data-tooltip="Copy for handoff" aria-label="Copy for handoff">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 4h7v9H5z"/><path d="M3 2h7v2M3 2v9h2"/></svg>
+            </a>
+            {%- if item.is_project %}
+                <a class="icon-act" href="{{ url('project_detail', item_id=item.id) }}" data-tooltip="Open project page" aria-label="Open project">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h5l2 2h5v8H2z"/></svg>
+                </a>
+            {%- endif %}
+            <a class="icon-act" href="{{ url('edit_item', item_id=item.id) }}?back={{ current_path | urlencode }}" data-tooltip="Open full edit form" aria-label="Edit all fields">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 1.5L14.5 4.5L5 14L1.5 14.5L2 11L11.5 1.5z"/><path d="M10 3L13 6"/></svg>
+            </a>
+            <form method="post" action="{{ url('delete_item', item_id=item.id) }}" data-inline-submit data-row-delete style="display:inline; margin:0;">
+                <button class="icon-act icon-act--danger" type="submit" data-tooltip="Delete (click twice to confirm)" aria-label="Delete">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10"/><path d="M5 4V2.5h6V4"/><path d="M4 4l1 10h6l1-10"/><path d="M7 7v5M9 7v5"/></svg>
+                </button>
+            </form>
+        </div>
+    </li>
+{%- endmacro -%}

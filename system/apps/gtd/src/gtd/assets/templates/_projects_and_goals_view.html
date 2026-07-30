@@ -1,0 +1,12 @@
+<div id="pg-editor"
+     class="pg-editor pg-editor--view"
+     hx-get="{{ url('projects_and_goals_editor') }}"
+     hx-trigger="click"
+     hx-swap="outerHTML"
+     title="Click to edit">
+    {% if prompt_html %}
+        {{ prompt_html | safe }}
+    {% else %}
+        <p class="pg-editor__empty"><em>Click to add your projects &amp; goals.</em></p>
+    {% endif %}
+</div>

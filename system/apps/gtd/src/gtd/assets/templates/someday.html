@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row, project_row with context %}
+
+{% block title %}Someday / Maybe — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1><em>Someday</em> / Maybe</h1>
+    <div class="view-head__meta">{{ project_groups | length }} project{% if project_groups | length != 1 %}s{% endif %} · {{ standalone_tasks | length }} loose task{% if standalone_tasks | length != 1 %}s{% endif %}</div>
+</header>
+<p class="view-blurb">Might-do later. No commitment, just keeping the door open.</p>
+
+{% if project_groups %}
+<div class="section-label">Projects</div>
+<ul class="items">
+    {% for project, children in project_groups %}
+        {{ project_row(project, index=loop.index0) }}
+        {% for child in children %}
+            {{ item_row(child, parent_lookup=parent_lookup, index=loop.index0, child=True) }}
+        {% endfor %}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if standalone_tasks %}
+<div class="section-label">Loose tasks</div>
+<ul class="items">
+    {% for task in standalone_tasks %}
+        {{ item_row(task, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% elif not project_groups %}
+<div class="empty">No someday items yet.</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row with context %}
+
+{% block title %}Inbox — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1>The <em>Inbox</em></h1>
+    <div class="view-head__meta">{{ items | length }} unprocessed</div>
+</header>
+<p class="view-blurb">Anything that has crossed your mind. Don't decide yet — just capture. Triage happens in chat.</p>
+
+{% if is_fresh %}
+<section class="onboard">
+    <div class="onboard__title">Getting started</div>
+    <p class="onboard__lead">The fastest way to fill your system is one big dump — no need to file items one at a time to start.</p>
+    <ol class="onboard__steps">
+        <li><b>Dump your whole list.</b> Paste everything on your mind into the box below — one item per line — and hit <b>File</b>.</li>
+        <li><b>Triage all in chat.</b> A <b>Triage all in chat</b> button appears once you've filed items. Click it and your agent sorts everything into Next Actions, Projects, Waiting, and more.</li>
+    </ol>
+    <p class="onboard__foot">After that you can add or refine items one at a time whenever you like.</p>
+</section>
+{% endif %}
+
+<form class="capture" method="post" action="{{ url('create_items') }}">
+    <textarea name="block" rows="{{ 6 if is_fresh else 3 }}" placeholder="Paste your whole todo list — one item per line. Bullets are fine."></textarea>
+    <div class="capture__row">
+        <span class="capture__hint">Each non-empty line becomes one inbox item.</span>
+        <button type="submit">File</button>
+    </div>
+</form>
+
+{% if items %}
+<div class="inbox-actions">
+    <a class="act act--primary" href="#" data-copy-url="{{ url('api_triage_inbox') }}" data-copy-label="Batch triage prompt">Triage all in chat</a>
+    <span class="inbox-actions__hint">Copies a prompt that walks you through every inbox item in chat — classify, clarify, and clean up.</span>
+</div>
+
+<ul class="items">
+    {% for item in items %}
+        {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% elif not is_fresh %}
+<div class="empty">Inbox is empty. Capture something or take a breath.</div>
+{% endif %}
+{% endblock %}

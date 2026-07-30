@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row, project_row with context %}
+
+{% block title %}Next Actions — GTD{% endblock %}
+
+{% block content %}
+{% set total = (standalone | length) + (project_groups | sum(attribute='1', start=[]) | length) %}
+<header class="view-head">
+    <h1>Next <em>Actions</em></h1>
+    <div class="view-head__meta">{{ standalone | length }} loose · {{ project_groups | length }} project{% if project_groups | length != 1 %}s{% endif %}</div>
+</header>
+<p class="view-blurb">Concrete next physical steps you can do without further thinking. 2-minute tasks rise to the top.</p>
+
+{% if standalone %}
+<div class="section-label">Loose actions</div>
+<ul class="items">
+    {% for task in standalone %}
+        {{ item_row(task, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if project_groups %}
+<div class="section-label">Inside a project</div>
+<ul class="items">
+    {% for project, tasks in project_groups %}
+        {{ project_row(project, index=loop.index0) }}
+        {% for task in tasks %}
+            {{ item_row(task, parent_lookup=parent_lookup, index=loop.index0, child=True) }}
+        {% endfor %}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if not standalone and not project_groups %}
+<div class="empty">Nothing teed up. Triage Inbox or capture something new.</div>
+{% endif %}
+{% endblock %}

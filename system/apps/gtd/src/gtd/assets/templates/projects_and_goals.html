@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Projects &amp; goals — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1><em>Projects</em> &amp; goals</h1>
+    <div class="view-head__meta">data/.apps/gtd/projects_and_goals.md</div>
+</header>
+<p class="view-blurb">
+    High-level context on my active projects and recurring intellectual
+    threads. The triage agent reads this at the start of every session,
+    so editing it changes how new inbox items get classified. Keep this
+    file high-level — detailed project context lives inside the project
+    item itself, not here.
+</p>
+
+{% include "_projects_and_goals_view.html" %}
+{% endblock %}

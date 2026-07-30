@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Review — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1><em>Weekly</em> Review</h1>
+    <div class="view-head__meta">data/.apps/gtd/weekly_review_prompt.md</div>
+</header>
+<p class="view-blurb">
+    Edit the prompt if you want to change how I run the review. When you're ready,
+    copy it and paste it into chat — that starts the review.
+</p>
+
+<form class="weekly-review" method="post" action="{{ url('save_weekly_review') }}">
+    <div class="weekly-review__actions weekly-review__actions--top">
+        <button type="button" class="act act--primary" id="weekly-copy-btn">Copy to clipboard</button>
+        <button type="submit" class="act">Save changes</button>
+    </div>
+    <textarea class="weekly-review__textarea" name="body" id="weekly-textarea" rows="28">{{ prompt_text }}</textarea>
+    <div class="weekly-review__actions">
+        <button type="button" class="act act--primary" onclick="document.getElementById('weekly-copy-btn').click()">Copy to clipboard</button>
+        <button type="submit" class="act">Save changes</button>
+    </div>
+</form>
+
+<script>
+document.getElementById('weekly-copy-btn').addEventListener('click', async function () {
+    const text = document.getElementById('weekly-textarea').value;
+    try {
+        await window.gtdCopyText(text);
+        window.gtdShowToast('Weekly Review copied');
+    } catch (err) {
+        window.gtdShowToast('Copy failed');
+    }
+});
+</script>
+{% endblock %}

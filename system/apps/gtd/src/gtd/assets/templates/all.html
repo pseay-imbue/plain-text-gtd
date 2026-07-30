@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row, project_row with context %}
+
+{% block title %}All — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1><em>All</em> items</h1>
+    <div class="view-head__meta">{{ results | length }} match{% if results | length != 1 %}es{% endif %}</div>
+</header>
+<p class="view-blurb">Every item in the system (except Trash). Search and filter to find anything.</p>
+
+<form class="filter-bar" method="get" action="{{ url('all_items') }}">
+    <input type="search" class="filter-bar__search" name="q" value="{{ filter_q }}" placeholder="Search titles and notes…" autocomplete="off" autofocus>
+    <select class="filter-bar__select" name="kind" aria-label="Kind">
+        <option value="" {% if not filter_kind %}selected{% endif %}>any kind</option>
+        <option value="task" {% if filter_kind == 'task' %}selected{% endif %}>tasks</option>
+        <option value="project" {% if filter_kind == 'project' %}selected{% endif %}>projects</option>
+    </select>
+    <select class="filter-bar__select" name="status" aria-label="Status">
+        <option value="" {% if not filter_status %}selected{% endif %}>any status</option>
+        {% for s in all_statuses %}
+        <option value="{{ s.value }}" {% if filter_status == s.value %}selected{% endif %}>{{ s.value }}</option>
+        {% endfor %}
+    </select>
+    <select class="filter-bar__select" name="priority" aria-label="Priority">
+        <option value="" {% if not filter_priority %}selected{% endif %}>any priority</option>
+        {% for p in all_priorities %}
+        <option value="{{ p.value }}" {% if filter_priority == p.value %}selected{% endif %}>{{ p.value }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="act act--primary">Filter</button>
+    {% if filter_q or filter_status or filter_priority or filter_kind %}
+    <a class="filter-bar__clear" href="{{ url('all_items') }}">clear</a>
+    {% endif %}
+</form>
+
+{% if not results %}
+<div class="empty">Nothing matches those filters.</div>
+{% else %}
+{% if project_groups %}
+<div class="section-label">Projects</div>
+<ul class="items">
+    {% for project, children in project_groups %}
+        {{ project_row(project, index=loop.index0) }}
+        {% for child in children %}
+            {{ item_row(child, parent_lookup=parent_lookup, index=loop.index0, child=True) }}
+        {% endfor %}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if standalone %}
+<div class="section-label">Loose tasks</div>
+<ul class="items">
+    {% for task in standalone %}
+        {{ item_row(task, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% endif %}
+{% endif %}
+{% endblock %}

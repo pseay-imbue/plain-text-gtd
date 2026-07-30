@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Triage instructions — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1><em>Triage</em> instructions</h1>
+    <div class="view-head__meta">data/.apps/gtd/instructions.md</div>
+</header>
+<p class="view-blurb">
+    These are the rules the chat-side agent reads before triaging. Edit any time;
+    the next triage conversation will pick up the changes.
+</p>
+
+<form class="weekly-review" method="post" action="{{ url('save_instructions') }}">
+    <textarea class="weekly-review__textarea" name="body" rows="32">{{ prompt_text }}</textarea>
+    <div class="weekly-review__actions">
+        <button type="submit" class="act act--primary">Save changes</button>
+    </div>
+</form>
+{% endblock %}

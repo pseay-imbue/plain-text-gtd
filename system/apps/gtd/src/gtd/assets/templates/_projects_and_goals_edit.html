@@ -1,0 +1,7 @@
+<form id="pg-editor"
+      class="pg-editor pg-editor--edit"
+      hx-post="{{ url('save_projects_and_goals') }}"
+      hx-trigger="focusout"
+      hx-swap="outerHTML">
+    <textarea class="pg-editor__textarea" name="body" autofocus>{{ prompt_text }}</textarea>
+</form>

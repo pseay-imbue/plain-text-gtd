@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row, project_row with context %}
+
+{% block title %}Projects — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1><em>Projects</em></h1>
+    <div class="view-head__meta">{{ next_project_groups | length }} active · {{ someday_project_groups | length }} someday</div>
+</header>
+<p class="view-blurb">Anything that takes more than one action. High-priority projects rise to the top of each section. Click a project to see its sub-actions, or copy it into chat for planning.</p>
+
+{% if next_project_groups %}
+<div class="section-label">Next</div>
+<ul class="items">
+    {% for project, children in next_project_groups %}
+        {{ project_row(project, index=loop.index0) }}
+        {% for child in children %}
+            {{ item_row(child, parent_lookup=parent_lookup, index=loop.index0, child=True) }}
+        {% endfor %}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if someday_project_groups %}
+<div class="section-label">Someday</div>
+<ul class="items">
+    {% for project, children in someday_project_groups %}
+        {{ project_row(project, index=loop.index0) }}
+        {% for child in children %}
+            {{ item_row(child, parent_lookup=parent_lookup, index=loop.index0, child=True) }}
+        {% endfor %}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if not next_project_groups and not someday_project_groups %}
+<div class="empty">No projects yet. Turn an inbox item into one when its outcome needs more than one step.</div>
+{% endif %}
+{% endblock %}

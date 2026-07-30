@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_item_macros.html" import item_row with context %}
+
+{% block title %}Today — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1><em>Today</em></h1>
+    <div class="view-head__meta">{{ today.strftime('%A · %d %b') }}</div>
+</header>
+<p class="view-blurb">What you committed to today — items due today, items you flagged to start today, work already in progress, and anything overdue.</p>
+
+{% if intentions_html %}
+<section class="intentions-card">
+    <div class="section-label">Intentions</div>
+    <div class="intentions-card__body">
+        {{ intentions_html | safe }}
+    </div>
+</section>
+{% endif %}
+
+{% if past_due %}
+<div class="section-label section-label--past-due">Past due</div>
+<ul class="items">
+    {% for item in past_due %}
+        {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if due_today %}
+<div class="section-label">Due today</div>
+<ul class="items">
+    {% for item in due_today %}
+        {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if starting_today %}
+<div class="section-label">Starting today</div>
+<ul class="items">
+    {% for item in starting_today %}
+        {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if in_progress %}
+<div class="section-label">In progress</div>
+<ul class="items">
+    {% for item in in_progress %}
+        {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if not due_today and not starting_today and not in_progress and not past_due %}
+{% if is_fresh %}
+<div class="empty">New here? Head to the <a href="{{ url('inbox') }}">Inbox</a> to dump your todo list and get started.</div>
+{% else %}
+<div class="empty">Nothing due, scheduled, or overdue today. Enjoy.</div>
+{% endif %}
+{% endif %}
+{% endblock %}

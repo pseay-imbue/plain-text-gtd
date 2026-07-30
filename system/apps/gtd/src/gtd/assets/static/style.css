@@ -1,0 +1,2198 @@
+/* GTD — commonplace book aesthetic.
+ *
+ * Palette is warm cream paper with charcoal ink. One accent per
+ * semantic mark (deadline / deferred / project / done). Layout is a
+ * narrow reading column with ruled-line dividers instead of cards. */
+
+:root {
+    --paper: #f5efe6;
+    --paper-deep: #ebe2d2;
+    --paper-tint: #f9f4ec;
+    --ink: #1c1b1a;
+    --ink-soft: #5b554c;
+    --ink-faint: #918878;
+    --rule: #d8cdb9;
+    --rule-soft: #e7dec9;
+    --accent-due: #a64238;
+    --accent-tickler: #3f5168;
+    --accent-project: #7a5837;
+    --accent-done: #4a6843;
+    --accent-waiting: #8a6a2c;
+
+    --font-display: "EB Garamond", "Adobe Garamond Pro", Garamond, "Times New Roman", serif;
+    --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    --font-mono: "IBM Plex Mono", "Menlo", monospace;
+
+    /* Type scale. Every font-size in the file maps to one of these.
+     * Body baseline (15px) lives on `body` so 1rem here ≈ matches it. */
+    --type-2xs:  0.62rem;   /* TODO meta line (annotations, due/status pickers) */
+    --type-xs:   0.7rem;    /* nav counts, masthead date, small mono labels */
+    --type-sm:   0.78rem;   /* nav text, filter selects, body previews, view blurbs */
+    --type-md:   0.9rem;    /* item titles, project body text, edit inputs */
+    --type-base: 1rem;      /* default UI body */
+    --type-lg:   1.15rem;   /* project-row titles, project body h1 */
+    --type-xl:   1.4rem;    /* section labels, weekly review heading */
+    --type-2xl:  1.55rem;   /* secondary headings, GTD brand */
+    --type-3xl:  2.2rem;    /* (reserved one slot above 2xl) */
+    --type-4xl:  2.4rem;    /* page titles ("Inbox", "Next Actions", calendar) */
+
+    --col-width: 44rem;
+    --col-wide: 68rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    background: var(--paper);
+}
+
+body {
+    margin: 0;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+    font-feature-settings: "ss01", "kern";
+    /* Subtle paper grain via a tiled SVG noise. */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-blend-mode: multiply;
+}
+
+/* ---- shell --------------------------------------------------------- */
+
+.shell {
+    max-width: var(--col-wide);
+    margin: 0 auto;
+    padding: 2.5rem 2rem 6rem;
+}
+
+.shell--narrow .content {
+    max-width: var(--col-width);
+    margin: 0 auto;
+}
+
+/* ---- masthead ------------------------------------------------------ */
+
+.masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: 0.6rem;
+}
+
+.masthead__left {
+    display: flex;
+    align-items: baseline;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+}
+
+.masthead__brand {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 600;
+    font-size: var(--type-2xl);
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.masthead__brand .dot {
+    color: var(--accent-due);
+}
+
+.masthead__date {
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.masthead__actions {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    align-self: center;
+}
+
+.masthead__link {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.masthead__link:hover {
+    color: var(--ink);
+}
+
+.masthead__link.is-active {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+}
+
+.masthead__search {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--paper-tint);
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: border-color 140ms ease, color 140ms ease, background 140ms ease;
+    line-height: 1;
+}
+
+.masthead__search svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.masthead__search:hover,
+.masthead__search.is-active {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--paper);
+}
+
+/* ---- nav ----------------------------------------------------------- */
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--rule);
+    font-size: var(--type-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.nav__group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.1rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--rule-soft);
+}
+
+.nav__group:first-child {
+    border-top: 0;
+}
+
+.nav__label {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.22em;
+}
+
+.nav a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    padding: 0.1rem 0;
+    border-bottom: 1.5px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.nav a:hover {
+    color: var(--ink);
+}
+
+.nav a.is-active {
+    color: var(--ink);
+    border-bottom-color: var(--accent-due);
+}
+
+.nav__count {
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    color: var(--ink-faint);
+    margin-left: 0.2rem;
+    letter-spacing: 0;
+}
+
+/* ---- filter bar (All view) --------------------------------------- */
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 1.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+}
+
+.filter-bar__search {
+    flex: 1 1 16rem;
+    min-width: 14rem;
+    appearance: none;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--type-md);
+    padding: 0.45rem 0.65rem;
+    border-radius: 2px;
+    outline: none;
+    transition: border-color 120ms ease;
+}
+
+.filter-bar__search:focus {
+    border-color: var(--ink-faint);
+}
+
+.filter-bar__select {
+    appearance: none;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    letter-spacing: 0.05em;
+    padding: 0.45rem 1.6rem 0.45rem 0.55rem;
+    cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%),
+                      linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%);
+    background-position: calc(100% - 12px) 55%, calc(100% - 7px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+.filter-bar__clear {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--ink-faint);
+}
+
+.filter-bar__clear:hover {
+    color: var(--accent-due);
+}
+
+/* ---- inbox top actions ------------------------------------------- */
+
+.inbox-actions {
+    margin: 0.75rem 0 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+}
+
+.inbox-actions__hint {
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: var(--type-sm);
+    max-width: 30rem;
+}
+
+/* ---- instructions block ------------------------------------------- */
+
+.instructions {
+    margin: 1.25rem 0 0;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.6rem;
+}
+
+.instructions summary {
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0.45rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.instructions summary::-webkit-details-marker {
+    display: none;
+}
+
+.instructions summary::before {
+    content: "›";
+    font-family: var(--font-display);
+    font-size: var(--type-base);
+    transition: transform 160ms ease;
+    display: inline-block;
+}
+
+.instructions[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.instructions__body {
+    max-width: var(--col-width);
+    margin: 0.8rem auto 0.6rem;
+    color: var(--ink-soft);
+}
+
+.instructions__body h1,
+.instructions__body h2,
+.instructions__body h3 {
+    font-family: var(--font-display);
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 1.4rem;
+}
+
+.instructions__body h1 {
+    font-size: var(--type-2xl);
+    margin-top: 0;
+}
+
+.instructions__body h2 {
+    font-size: var(--type-lg);
+}
+
+.instructions__edit-link {
+    margin-top: 1rem;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.instructions__edit-link a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--ink-faint);
+}
+
+.instructions__edit-link a:hover {
+    color: var(--accent-due);
+}
+
+.instructions__body code {
+    font-family: var(--font-mono);
+    font-size: var(--type-md);
+    background: var(--paper-deep);
+    padding: 0.05rem 0.3rem;
+    border-radius: 2px;
+}
+
+/* ---- view heading ------------------------------------------------- */
+
+.view-head {
+    margin: 2.25rem 0 1.5rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.view-head h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--type-4xl);
+    margin: 0;
+    letter-spacing: 0.005em;
+}
+
+.view-head h1 em {
+    color: var(--accent-due);
+    font-style: italic;
+}
+
+.view-head__meta {
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    text-align: right;
+}
+
+.view-blurb {
+    color: var(--ink-soft);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--type-lg);
+    max-width: 38rem;
+    margin: -0.5rem 0 2rem;
+}
+
+/* ---- item list ---------------------------------------------------- */
+
+.items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--rule);
+}
+
+.item {
+    border-bottom: 1px solid var(--rule);
+    padding: 0.6rem 0;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0 0.75rem;
+    /* Top-align the columns rather than baseline-align them. Baseline
+     * alignment made a row's vertical position depend on the checkbox
+     * column — a flex <form> whose *synthesized* baseline differs from the
+     * title's text baseline — so the gap between the divider and the task
+     * varied per row (and collapsed entirely in Safari, which synthesizes
+     * that baseline differently). `start` makes the content column always
+     * begin at the padding edge, so every row's top margin is identical
+     * regardless of content or browser. The checkbox and action icons are
+     * nudged onto the title's first line via their own margins below. */
+    align-items: start;
+}
+/* Note: previously this had a `rise` keyframe animation with
+ * animation-fill-mode: forwards, which left transform: translateY(0)
+ * on every settled row — and that creates a stacking context, trapping
+ * any open dropdown panel inside the row. Removing the animation lets
+ * the panel's z-index actually win across page contexts. */
+
+.item--project-row {
+    grid-template-columns: 1fr auto;
+    /* Match the task-row padding so the gap between the divider and the row
+     * is identical for project and task rows. (Project rows previously had
+     * extra padding, which was hidden under baseline alignment but became a
+     * visibly larger top margin once rows started top-aligning.) */
+    padding: 0.6rem 0;
+}
+
+.item__title--project {
+    font-family: var(--font-display);
+    font-size: var(--type-lg);
+    font-weight: 500;
+}
+
+.item__title--project a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px dotted transparent;
+    transition: border-color 120ms ease;
+}
+
+.item__title--project a:hover {
+    border-bottom-color: var(--ink-faint);
+}
+
+.item__actions--always {
+    opacity: 1;
+}
+
+.item__check {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--ink-faint);
+    background: transparent;
+    margin: 0;
+    margin-top: 0.25rem;
+    cursor: pointer;
+    border-radius: 2px;
+    position: relative;
+    transition: border-color 120ms ease, background 120ms ease;
+}
+
+.item__check:hover {
+    border-color: var(--ink);
+}
+
+.item__check:checked {
+    background: var(--accent-done);
+    border-color: var(--accent-done);
+}
+
+.item__check:checked::after {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: -1px;
+    width: 4px;
+    height: 9px;
+    border: solid var(--paper);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.item__title {
+    font-family: var(--font-body);
+    font-size: var(--type-md);
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.35;
+    padding: 0.1rem 0.2rem;
+    margin: -0.1rem -0.2rem;
+    border-radius: 2px;
+    cursor: text;
+    outline: none;
+    /* Task titles are inline-block (they carry a [data-tooltip], which flips
+     * them from block), so they sit inside the row's line box and get nudged
+     * down by its strut — while block-level project titles don't. That made
+     * the divider-to-task gap differ by ~2px between task and project rows.
+     * `vertical-align: top` pins the inline-block title to the top of its
+     * line box, so every row's top margin is identical. */
+    vertical-align: top;
+    transition: background 120ms ease;
+}
+
+.item__title:hover {
+    background: var(--paper-tint);
+}
+
+.item__title.is-editing {
+    background: var(--paper-tint);
+    box-shadow: inset 0 0 0 1px var(--ink-faint);
+}
+
+.item__title a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted transparent;
+    transition: border-color 120ms ease;
+}
+
+.item__title a:hover {
+    border-bottom-color: var(--ink-faint);
+}
+
+.item--done .item__title {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--ink-faint);
+}
+
+.item__meta {
+    margin-top: 0.15rem;
+    font-family: var(--font-mono);
+    font-size: var(--type-2xs);
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.85rem;
+    align-items: baseline;
+}
+
+.item__meta--dates {
+    margin-top: 0.25rem;
+    gap: 0 1rem;
+}
+
+.meta-edit__label {
+    font-family: var(--font-mono);
+    font-size: var(--type-2xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-right: 0.25rem;
+}
+
+.item__meta b {
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+.item__meta .annot--due { color: var(--accent-due); }
+.item__meta .annot--tickler { color: var(--accent-tickler); }
+.item__meta .annot--waiting { color: var(--accent-waiting); }
+.item__meta .annot--project { color: var(--accent-project); }
+.item__meta .annot--quick {
+    color: var(--accent-done);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.item__meta .annot--recur {
+    color: var(--accent-tickler);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+}
+
+.item__body-preview {
+    margin-top: 0.25rem;
+    color: var(--ink-soft);
+    font-style: italic;
+    font-size: var(--type-sm);
+    max-width: 38rem;
+    /* The full body is rendered but clamped to a few lines. app.js adds a
+     * "more" toggle when it actually overflows, so the whole description can
+     * be read in place without opening the edit page. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+
+.item__body-preview.is-expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+    /* Preserve the note's line breaks once expanded so multi-paragraph
+     * bodies (e.g. dated triage notes) stay readable. */
+    white-space: pre-wrap;
+}
+
+.item__body-toggle {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin-top: 0.2rem;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--type-2xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px dotted var(--ink-faint);
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.item__body-toggle:hover {
+    color: var(--accent-tickler);
+    border-bottom-color: var(--accent-tickler);
+}
+
+/* URLs in the preview render as plain inline text until you hover the row,
+ * at which point they pick up an underline + accent color so it's obvious
+ * they're clickable. */
+.item__body-preview a {
+    color: inherit;
+    text-decoration: none;
+    font-style: normal;
+    border-bottom: 1px dotted transparent;
+    transition: color 140ms ease, border-color 140ms ease;
+}
+
+.item:hover .item__body-preview a {
+    color: var(--accent-tickler);
+    border-bottom-color: var(--accent-tickler);
+}
+
+.item__body-preview a:hover {
+    color: var(--accent-due);
+    border-bottom-color: var(--accent-due);
+}
+
+.item__actions {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    opacity: 0.35;
+    transition: opacity 180ms ease;
+}
+
+.item:hover .item__actions,
+.item:focus-within .item__actions {
+    opacity: 1;
+}
+
+.icon-act {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--ink-faint);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    text-decoration: none;
+    transition: color 120ms ease, background 120ms ease;
+}
+
+.icon-act:hover {
+    color: var(--accent-due);
+    background: var(--paper-tint);
+}
+
+.icon-act--danger:hover {
+    color: var(--accent-due);
+}
+
+/* Two-click delete confirm state: button goes red, signals "tap again". */
+form.is-confirming .icon-act--danger {
+    color: var(--paper);
+    background: var(--accent-due);
+    opacity: 1;
+    animation: pulse-confirm 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-confirm {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.65; }
+}
+
+.icon-act svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Custom dropdown widget (replaces native <select> popups which Chromium
+ * refuses to fully style). Uses <details>/<summary> + an absolutely
+ * positioned panel of buttons. */
+.cdrop {
+    position: relative;
+    display: inline-block;
+}
+
+.cdrop > summary {
+    list-style: none;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    padding: 0.1rem 0.85rem 0.1rem 0.3rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%),
+                      linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%);
+    background-position: calc(100% - 6px) 55%, calc(100% - 3px) 55%;
+    background-size: 3px 3px, 3px 3px;
+    background-repeat: no-repeat;
+    border-radius: 2px;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.cdrop > summary::-webkit-details-marker { display: none; }
+.cdrop > summary::marker { content: ""; }
+
+.cdrop > summary:hover,
+.cdrop[open] > summary {
+    background-color: var(--paper-tint);
+    color: var(--ink);
+}
+
+.cdrop.is-saving > summary {
+    background-color: var(--paper-deep);
+}
+
+.cdrop--pri-high > summary { color: var(--accent-due); font-weight: 600; }
+.cdrop--pri-low > summary { color: var(--ink-faint); font-style: italic; }
+.cdrop--parent > summary { color: var(--accent-project); max-width: 22rem; }
+
+/* Boost the .cdrop into its own stacking context when open so the panel
+ * sits above everything else in the row (date inputs were peeking through). */
+.cdrop[open] {
+    z-index: 50;
+}
+
+.cdrop__panel {
+    position: absolute;
+    z-index: 1000;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: max(100%, 9rem);
+    max-width: 26rem;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    box-shadow: 0 10px 32px rgba(28, 27, 26, 0.16);
+    padding: 0.3rem 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 22rem;
+    overflow-y: auto;
+    margin: 0;
+}
+
+.cdrop--parent .cdrop__panel { min-width: 20rem; }
+
+.cdrop__option {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.05em;
+    color: var(--ink);
+    padding: 0.35rem 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.4;
+    transition: background 100ms ease, color 100ms ease;
+}
+
+/* Row leaves the list when its new status no longer matches this view. */
+.item.is-leaving {
+    transition: opacity 500ms ease,
+                max-height 600ms ease 400ms,
+                padding-top 600ms ease 400ms,
+                padding-bottom 600ms ease 400ms,
+                border-bottom-width 600ms ease 400ms;
+    opacity: 0;
+    max-height: 7rem;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.item.is-leaving.is-collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+}
+
+.cdrop__option:hover {
+    background: var(--paper-tint);
+}
+
+.cdrop__option.is-selected {
+    color: var(--accent-due);
+    font-weight: 500;
+    background: var(--paper-tint);
+}
+
+/* Inline meta-row editors: <select> and date input that look like text. */
+
+.meta-edit {
+    margin: 0;
+    display: inline-flex;
+    align-items: baseline;
+}
+
+.meta-edit__select,
+.meta-edit__date {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    padding: 0.05rem 0.25rem;
+    cursor: pointer;
+    outline: none;
+    /* Force the native popup to render in light mode so it picks up the
+     * paper-colored option backgrounds instead of OS-default grey. */
+    color-scheme: light;
+    transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.meta-edit__select {
+    padding-right: 0.9rem;
+    max-width: 13rem;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-faint) 50%),
+                      linear-gradient(135deg, var(--ink-faint) 50%, transparent 50%);
+    background-position: calc(100% - 6px) 55%, calc(100% - 3px) 55%;
+    background-size: 3px 3px, 3px 3px;
+    background-repeat: no-repeat;
+}
+
+.meta-edit__select option {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--type-md);
+    padding: 6px 12px;
+}
+
+.meta-edit__select option:checked {
+    background-color: var(--accent-due);
+    color: var(--paper);
+}
+
+.meta-edit__select--status {
+    color: var(--ink);
+}
+
+.meta-edit__select--parent {
+    color: var(--accent-project);
+    max-width: 22rem;
+}
+
+.meta-edit__select--parent option {
+    max-width: none;
+}
+
+.meta-edit__select--pri-high {
+    color: var(--accent-due);
+    font-weight: 600;
+}
+
+.meta-edit__select--pri-low {
+    color: var(--ink-faint);
+    font-style: italic;
+}
+
+.item--high .item__title::before {
+    content: "★ ";
+    color: var(--accent-due);
+    font-weight: 600;
+}
+
+.item--low .item__title {
+    opacity: 0.75;
+}
+
+/* Waiting items use child-element opacity rather than .item opacity, since
+ * the row itself animates from opacity 0 → 1 on load and the keyframe
+ * "forwards" state would override a static row-level opacity rule. */
+.item--status-waiting .item__title,
+.item--status-waiting .item__meta,
+.item--status-waiting .item__body-preview,
+.item--status-waiting .item__actions {
+    opacity: 0.5;
+    transition: opacity 160ms ease;
+}
+
+.item--status-waiting .item__title {
+    color: var(--ink-soft);
+    font-style: italic;
+}
+
+.item--status-waiting:hover .item__title,
+.item--status-waiting:hover .item__meta,
+.item--status-waiting:hover .item__body-preview,
+.item--status-waiting:hover .item__actions {
+    opacity: 1;
+}
+
+.meta-edit__select--parent:has(option[value=""]:checked) {
+    color: var(--ink-faint);
+    font-style: italic;
+}
+
+.meta-edit__date {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    min-width: 6.5rem;
+}
+
+.meta-edit__date--due {
+    color: var(--accent-due);
+    font-weight: 500;
+}
+
+.meta-edit__date--start {
+    color: var(--accent-tickler);
+    font-weight: 500;
+}
+
+.meta-edit__select:hover,
+.meta-edit__date:hover {
+    background-color: var(--paper-tint);
+    color: var(--ink);
+}
+
+.meta-edit__select:focus,
+.meta-edit__date:focus {
+    background-color: var(--paper-tint);
+    color: var(--ink);
+}
+
+.meta-edit__select.is-saving,
+.meta-edit__date.is-saving {
+    background-color: var(--paper-deep);
+}
+
+/* Force the native calendar indicator to be visible even when value is empty. */
+.meta-edit__date::-webkit-calendar-picker-indicator {
+    opacity: 0.55;
+    cursor: pointer;
+    margin-left: 0.15rem;
+}
+
+.meta-edit__date:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+}
+
+.act {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.6rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.act:hover {
+    background: var(--paper-tint);
+    border-color: var(--ink-faint);
+    color: var(--ink);
+}
+
+.act--primary {
+    border-color: var(--accent-due);
+    color: var(--accent-due);
+}
+
+.act--primary:hover {
+    background: var(--accent-due);
+    color: var(--paper);
+}
+
+.act--danger {
+    border-color: var(--rule);
+    color: var(--accent-due);
+}
+
+.act--danger:hover {
+    background: var(--accent-due);
+    color: var(--paper);
+    border-color: var(--accent-due);
+}
+
+/* ---- edit form --------------------------------------------------- */
+
+.edit-form {
+    margin: 0.75rem 0 1.5rem;
+}
+
+.edit-form__label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.3rem;
+}
+
+.edit-form__label--spaced {
+    margin-top: 1rem;
+}
+
+.edit-form__label--inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-body);
+    font-size: var(--type-md);
+    color: var(--ink-soft);
+    margin-bottom: 0;
+}
+
+.edit-form__title {
+    width: 100%;
+    font-family: var(--font-display);
+    font-size: var(--type-xl);
+    color: var(--ink);
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.edit-form__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1rem;
+}
+
+.edit-form__cell--full {
+    grid-column: 1 / -1;
+}
+
+.edit-form__input {
+    width: 100%;
+    padding: 0.45rem;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    font-family: var(--font-body);
+    color: var(--ink);
+}
+
+.edit-form__input--mono {
+    font-family: var(--font-mono);
+}
+
+.edit-form__textarea {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: var(--type-md);
+    padding: 0.75rem;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    resize: vertical;
+    color: var(--ink);
+}
+
+.edit-form__actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+}
+
+.edit-form__delete {
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 1rem;
+    text-align: right;
+}
+
+.edit-form__hint {
+    display: block;
+    margin-top: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+}
+
+.weekday-picker {
+    display: inline-flex;
+    gap: 0.35rem;
+    margin-top: 0.1rem;
+    transition: opacity 120ms ease;
+}
+
+.weekday-picker.is-saving {
+    opacity: 0.6;
+}
+
+.weekday-picker__day {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--type-md);
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 100ms ease;
+}
+
+.weekday-picker__day:active {
+    transform: scale(0.95);
+}
+
+.weekday-picker__day input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+}
+
+.weekday-picker__day span {
+    pointer-events: none;
+}
+
+.weekday-picker__day:hover {
+    background: var(--paper-tint);
+    border-color: var(--ink-faint);
+    color: var(--ink);
+}
+
+.weekday-picker__day.is-on,
+.weekday-picker__day:has(input:checked) {
+    background: var(--accent-tickler);
+    color: var(--paper);
+    border-color: var(--accent-tickler);
+}
+
+/* ---- empty state -------------------------------------------------- */
+
+.empty {
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 3rem 0;
+    text-align: center;
+    color: var(--ink-faint);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--type-lg);
+}
+
+/* ---- first-run onboarding ----------------------------------------- */
+
+.onboard {
+    margin: 1rem 0 1.25rem;
+    padding: 1rem 1.25rem 1.1rem;
+    background: var(--paper-tint);
+    border-left: 3px solid var(--accent-due);
+    border-radius: 2px;
+}
+
+.onboard__title {
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+}
+
+.onboard__lead {
+    margin: 0.5rem 0 0.75rem;
+    font-family: var(--font-display);
+    font-size: var(--type-lg);
+    color: var(--ink);
+}
+
+.onboard__steps {
+    margin: 0;
+    padding-left: 1.3rem;
+    color: var(--ink-soft);
+}
+
+.onboard__steps li {
+    margin: 0.4rem 0;
+    line-height: 1.5;
+}
+
+.onboard__steps b {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.onboard__foot {
+    margin: 0.85rem 0 0;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: var(--type-sm);
+}
+
+/* ---- capture form ------------------------------------------------- */
+
+.capture {
+    margin: 1rem 0 2rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+}
+
+.capture textarea {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: var(--type-base);
+    color: var(--ink);
+    line-height: 1.55;
+    resize: vertical;
+    min-height: 4.5rem;
+    outline: none;
+}
+
+.capture textarea::placeholder {
+    color: var(--ink-faint);
+    font-style: italic;
+}
+
+.capture__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.6rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 0.6rem;
+}
+
+.capture__hint {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.08em;
+}
+
+.capture button {
+    appearance: none;
+    background: var(--ink);
+    color: var(--paper);
+    border: 0;
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+}
+
+.capture button:hover {
+    background: var(--accent-due);
+}
+
+/* ---- quick-add input on project detail --------------------------- */
+
+.add-child {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.4rem 0 1.5rem;
+    padding: 0.55rem 0.85rem;
+    border: 1px dashed var(--rule);
+    border-radius: 3px;
+    background: var(--paper-tint);
+    transition: border-color 140ms ease, background 140ms ease;
+}
+
+.add-child:focus-within {
+    border-color: var(--ink-faint);
+    border-style: solid;
+    background: var(--paper);
+}
+
+.add-child__plus {
+    font-family: var(--font-display);
+    font-size: var(--type-xl);
+    line-height: 1;
+    color: var(--ink-faint);
+    font-weight: 400;
+}
+
+.add-child:focus-within .add-child__plus {
+    color: var(--accent-due);
+}
+
+.add-child__input {
+    flex: 1;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: var(--type-base);
+    color: var(--ink);
+    padding: 0.2rem 0;
+    outline: none;
+}
+
+.add-child__input::placeholder {
+    color: var(--ink-faint);
+    font-style: italic;
+}
+
+.add-child__hint {
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 140ms ease;
+}
+
+.add-child:focus-within .add-child__hint {
+    opacity: 1;
+}
+
+.empty--quiet {
+    border: 0;
+    padding: 1rem 0;
+    text-align: left;
+    font-size: var(--type-md);
+}
+
+/* ---- project detail ---------------------------------------------- */
+
+.project-shell {
+    margin-top: 1.2rem;
+}
+
+.project-shell__body-wrap {
+    margin: 1rem 0 2rem;
+    max-width: 38rem;
+}
+
+.project-shell__body {
+    font-family: var(--font-display);
+    font-size: var(--type-md);
+    line-height: 1.5;
+    color: var(--ink);
+    cursor: text;
+    padding: 0.4rem 0.6rem;
+    margin: -0.4rem -0.6rem;
+    border-radius: 4px;
+    transition: background 120ms ease;
+}
+
+.project-shell__body:hover {
+    background: var(--paper-tint);
+}
+
+.project-shell__body--empty {
+    color: var(--ink-faint);
+    font-style: italic;
+}
+
+/* Tighter headings inside the project description so the body skims well. */
+.project-shell__body h1 {
+    font-size: var(--type-base);
+    font-weight: 600;
+    margin: 1rem 0 0.35rem;
+    line-height: 1.3;
+}
+
+.project-shell__body h2 {
+    font-size: var(--type-md);
+    font-weight: 600;
+    margin: 0.9rem 0 0.3rem;
+    line-height: 1.3;
+}
+
+.project-shell__body h3 {
+    font-size: var(--type-md);
+    font-weight: 600;
+    margin: 0.75rem 0 0.25rem;
+    line-height: 1.3;
+}
+
+.project-shell__body h4,
+.project-shell__body h5,
+.project-shell__body h6 {
+    font-size: var(--type-md);
+    font-weight: 600;
+    margin: 0.65rem 0 0.2rem;
+    line-height: 1.3;
+}
+
+.project-shell__body p {
+    margin: 0.4rem 0;
+}
+
+.project-shell__body ul,
+.project-shell__body ol {
+    margin: 0.35rem 0;
+    padding-left: 1.4rem;
+}
+
+.project-shell__body li {
+    margin: 0.15rem 0;
+}
+
+.project-shell__body-textarea {
+    font-family: var(--font-display);
+    font-size: var(--type-md);
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--paper-tint);
+    box-shadow: inset 0 0 0 1px var(--ink-faint);
+    border-radius: 4px;
+    border: 0;
+    padding: 0.4rem 0.6rem;
+    width: 100%;
+    min-height: 6rem;
+    resize: vertical;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.section-label {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: var(--type-xl);
+    color: var(--ink);
+    margin: 3.5rem 0 0.5rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--rule);
+}
+
+.section-label:first-of-type {
+    margin-top: 1.5rem;
+}
+
+.section-label--past-due em,
+.section-label--past-due {
+    color: var(--accent-due);
+}
+
+/* Tighten the item-list border styling so two sections don't run together. */
+.section-label + .items {
+    border-top: 0;
+}
+
+.items + .section-label {
+    margin-top: 4rem;
+}
+
+/* Nested child rows under a project. */
+.item--child {
+    padding-left: 2.25rem;
+    position: relative;
+}
+
+.item--child::before {
+    content: "";
+    position: absolute;
+    left: 0.85rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--rule);
+}
+
+/* Note: a group-separation `margin-top: 0.5rem` used to sit here on the
+ * first non-child row after a child group (i.e. the next project row). It
+ * gave project rows a visibly larger, inconsistent top margin than every
+ * other row. The indentation and the project row's own styling already mark
+ * where a new group begins, so the extra gap is dropped for a uniform
+ * divider-to-row spacing across all rows. */
+
+.children-label {
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin: 2rem 0 0.5rem;
+}
+
+/* ---- calendar ----------------------------------------------------- */
+
+.cal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1rem;
+}
+
+.cal-head h1 {
+    font-family: var(--font-display);
+    font-size: var(--type-4xl);
+    margin: 0;
+}
+
+.cal-head h1 em {
+    color: var(--accent-due);
+    font-style: italic;
+    font-weight: 500;
+}
+
+.cal-head nav {
+    display: flex;
+    gap: 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.cal-head nav a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--ink-faint);
+}
+
+.cal-head nav a:hover { color: var(--ink); }
+
+.cal-grid {
+    display: grid;
+    /* minmax(0, 1fr) rather than 1fr: a bare 1fr track has a min-content
+     * floor, so the no-wrap event chips would stretch each column to fit the
+     * longest title and blow the grid far past the viewport. A 0 floor lets
+     * the seven columns stay equal and the chips ellipsize within them. */
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border-top: 1px solid var(--ink);
+    border-left: 1px solid var(--rule);
+}
+
+.cal-dow {
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 0.4rem 0.5rem;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-tint);
+}
+
+.cal-cell {
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    min-height: 6.5rem;
+    padding: 0.35rem 0.45rem;
+    position: relative;
+    background: var(--paper);
+}
+
+.cal-cell--out {
+    background: var(--paper-deep);
+    opacity: 0.55;
+}
+
+.cal-cell--today {
+    box-shadow: inset 0 0 0 2px var(--accent-due);
+}
+
+.cal-cell__num {
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    color: var(--ink-soft);
+}
+
+.cal-cell--today .cal-cell__num {
+    color: var(--accent-due);
+    font-weight: 600;
+}
+
+.cal-cell__items {
+    margin-top: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+}
+
+.cal-chip {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    font-size: var(--type-sm);
+    line-height: 1.25;
+    color: var(--ink);
+    text-decoration: none;
+    border-left: 2px solid var(--rule);
+    padding-left: 0.35rem;
+    /* Wrap the event title onto multiple lines when it's wider than the day
+     * cell, rather than truncating it. overflow-wrap: anywhere lets even a
+     * single long token (e.g. a URL) break instead of overflowing. */
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.cal-chip:hover { color: var(--accent-due); }
+
+.cal-chip--due { border-color: var(--accent-due); }
+.cal-chip--tickler { border-color: var(--accent-tickler); font-style: italic; }
+.cal-chip--span { border-color: var(--accent-project); }
+
+.cal-cell__more {
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+}
+
+/* ---- tooltips ----------------------------------------------------- */
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.55rem;
+    white-space: nowrap;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 12;
+    opacity: 0;
+    animation: tip-in 120ms ease 80ms forwards;
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:focus-visible::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: var(--ink);
+    pointer-events: none;
+    z-index: 12;
+    opacity: 0;
+    animation: tip-in 120ms ease 80ms forwards;
+}
+
+@keyframes tip-in {
+    to { opacity: 1; }
+}
+
+/* Items in lists are inside a container that scrolls; let tooltips spill. */
+.items, .items--done { overflow: visible; }
+
+/* The item title's own tooltip can sit inline-block to position correctly. */
+.item__title[data-tooltip] {
+    display: inline-block;
+}
+
+/* ---- toast -------------------------------------------------------- */
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.6rem;
+    transform: translate(-50%, 1.5rem);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.7rem 1.1rem;
+    border: 1px solid var(--ink);
+    box-shadow: 0 8px 28px rgba(28, 27, 26, 0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease, transform 240ms ease;
+    z-index: 20;
+}
+
+.toast.is-show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* A toast carrying an action button (e.g. Undo) must be clickable — the
+   plain toast is pointer-events:none so it never intercepts clicks. */
+.toast.toast--action {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.toast__action {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--paper);
+    color: var(--paper);
+    font: inherit;
+    font-size: var(--type-sm);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.6rem;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+}
+
+.toast__action:hover,
+.toast__action:focus-visible {
+    background: var(--paper);
+    color: var(--ink);
+    outline: none;
+}
+
+/* ---- weekly review page ------------------------------------------ */
+
+.weekly-review {
+    margin: 1rem 0 2rem;
+}
+
+.weekly-review__actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin: 0.5rem 0;
+}
+
+.weekly-review__actions--top {
+    margin-bottom: 0.75rem;
+}
+
+.weekly-review__textarea {
+    width: 100%;
+    min-height: 32rem;
+    font-family: var(--font-body);
+    font-size: var(--type-md);
+    line-height: 1.55;
+    padding: 1rem 1.1rem;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    resize: vertical;
+}
+
+/* ---- projects & goals click-to-edit ------------------------------- */
+
+.pg-editor {
+    margin: 1rem 0 2rem;
+}
+
+.pg-editor--view {
+    padding: 1rem 1.1rem;
+    border: 1px dashed transparent;
+    border-radius: 3px;
+    cursor: text;
+    color: var(--ink);
+    line-height: 1.6;
+    transition: border-color 140ms ease, background 140ms ease;
+}
+
+.pg-editor--view:hover {
+    border-color: var(--rule);
+    background: var(--paper-tint);
+}
+
+.pg-editor--view > :first-child {
+    margin-top: 0;
+}
+
+.pg-editor--view > :last-child {
+    margin-bottom: 0;
+}
+
+.pg-editor--view h1,
+.pg-editor--view h2,
+.pg-editor--view h3 {
+    font-family: var(--font-display);
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 1.4rem;
+}
+
+.pg-editor--view h1 { font-size: var(--type-2xl); }
+.pg-editor--view h2 { font-size: var(--type-lg); }
+.pg-editor--view h3 { font-size: var(--type-md); letter-spacing: 0.04em; }
+
+.pg-editor--view code {
+    font-family: var(--font-mono);
+    font-size: var(--type-md);
+    background: var(--paper-deep);
+    padding: 0.05rem 0.3rem;
+    border-radius: 2px;
+}
+
+.pg-editor--view ul,
+.pg-editor--view ol {
+    padding-left: 1.5rem;
+}
+
+.pg-editor__empty {
+    color: var(--ink-faint);
+    font-style: italic;
+}
+
+.pg-editor__textarea {
+    width: 100%;
+    min-height: 32rem;
+    font-family: var(--font-body);
+    font-size: var(--type-md);
+    line-height: 1.6;
+    padding: 1rem 1.1rem;
+    background: var(--paper-tint);
+    border: 1px solid var(--ink-faint);
+    border-radius: 3px;
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+}
+
+.pg-editor__textarea:focus {
+    border-color: var(--ink);
+    background: var(--paper);
+}
+
+/* ---- done section ------------------------------------------------- */
+
+.done-section {
+    margin-top: 3.5rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 0.5rem;
+}
+
+.done-section > summary {
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0.45rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.done-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+.done-section > summary::before {
+    content: "›";
+    font-family: var(--font-display);
+    font-size: var(--type-base);
+    color: var(--ink-faint);
+    transition: transform 160ms ease;
+    display: inline-block;
+}
+
+.done-section[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.done-section__count {
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    color: var(--ink-faint);
+    letter-spacing: 0;
+}
+
+.done-section__empty {
+    padding: 1.25rem 0;
+    color: var(--ink-faint);
+    font-style: italic;
+    text-align: center;
+}
+
+.items--done {
+    margin-top: 0.4rem;
+    opacity: 0.85;
+}
+
+/* ---- footer rule -------------------------------------------------- */
+
+.footer-note {
+    margin-top: 5rem;
+    border-top: 1px solid var(--rule);
+    padding-top: 1rem;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    display: flex;
+    justify-content: space-between;
+}
+
+.footer-note a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--ink-faint);
+}
+
+/* Intentions card — daily reminders pinned to the top of Today. */
+.intentions-card {
+    margin: 0.6rem 0 1.6rem;
+    padding: 0.4rem 1rem 0.7rem;
+    background: var(--paper-tint);
+    border-left: 3px solid var(--accent-project);
+    border-radius: 2px;
+}
+.intentions-card .section-label {
+    margin-top: 0.3rem;
+}
+.intentions-card__body {
+    font-family: var(--font-display);
+    font-size: var(--type-lg);
+    color: var(--ink);
+}
+.intentions-card__body p {
+    margin: 0.2rem 0 0.5rem;
+    color: var(--ink-soft);
+    font-size: var(--type-sm);
+    font-family: var(--font-body);
+}
+.intentions-card__body ul {
+    margin: 0.2rem 0 0;
+    padding-left: 1.2rem;
+}
+.intentions-card__body li {
+    margin: 0.25rem 0;
+    line-height: 1.4;
+}
+
+/* ---- mobile / narrow screens -------------------------------------- */
+/* The layout above assumes a wide reading column and mouse hover. On a
+ * phone that produces horizontal overflow (item rows force a third
+ * "actions" column, pasted URLs never wrap, the 7-column calendar blows
+ * past the viewport) and hidden controls (row actions only appear on
+ * hover, which touch can't trigger). This block reflows for narrow widths. */
+
+@media (max-width: 640px) {
+    .shell {
+        padding: 1.75rem 1rem 4rem;
+    }
+
+    /* Masthead + view/calendar headings: allow wrapping so the title and
+     * its right-aligned meta stack instead of colliding. */
+    .masthead {
+        flex-wrap: wrap;
+        gap: 0.4rem 1rem;
+    }
+
+    .masthead__actions {
+        gap: 1rem;
+    }
+
+    .view-head,
+    .cal-head {
+        flex-wrap: wrap;
+        gap: 0.35rem 1rem;
+    }
+
+    .view-head h1,
+    .cal-head h1 {
+        font-size: var(--type-3xl);
+    }
+
+    .view-head__meta {
+        text-align: left;
+    }
+
+    /* Item rows: drop the third (actions) column and float the actions
+     * onto their own row beneath the content, so the check + content + icons
+     * no longer overlap when the viewport is narrow. Extra vertical padding
+     * gives each row room to breathe and separates the text from the ruled
+     * divider below it. */
+    .item {
+        grid-template-columns: auto 1fr;
+        /* Set the vertical padding only (not the `padding` shorthand) so the
+         * left indent on nested child rows survives. */
+        padding-top: 0.9rem;
+        padding-bottom: 0.9rem;
+    }
+
+    /* The meta and date rows wrap on a narrow screen (e.g. a long "waiting
+     * on ..." note, or the due/start fields stacking). Their base row-gap is
+     * 0, which crams the wrapped lines together; give them vertical breathing
+     * room so the wrapped lines don't look cramped. */
+    .item__meta,
+    .item__meta--dates {
+        row-gap: 0.3rem;
+    }
+
+    .item__actions {
+        grid-column: 2;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        margin-top: 0.35rem;
+        /* Touch devices have no hover, so keep row actions always visible. */
+        opacity: 1;
+    }
+
+    /* Grid cells default to min-width:auto and won't shrink below their
+     * content; force the content/actions columns to 0 so they track the
+     * viewport instead of their widest child. */
+    .item > div {
+        min-width: 0;
+    }
+
+    /* The parent-project picker summary is nowrap with a wide max-width,
+     * which would otherwise force the row wider than the screen; let it
+     * shrink and ellipsize to the available width. */
+    .cdrop,
+    .cdrop > summary,
+    .cdrop--parent > summary {
+        max-width: 100%;
+    }
+
+    .cdrop__panel {
+        max-width: calc(100vw - 2rem);
+    }
+
+    /* Project rows are a single column, so their actions stack below the
+     * description. The generic `.item__actions { grid-column: 2 }` rule
+     * above would otherwise shove them into an implicit second column, next
+     * to the text; pin them back to column 1 and give them room. */
+    .item--project-row {
+        grid-template-columns: 1fr;
+        /* Inherit the task-row vertical padding (0.9rem) for a consistent
+         * top margin; only the grid layout differs for project rows. */
+    }
+
+    .item--project-row .item__actions {
+        grid-column: 1;
+        margin-top: 0.7rem;
+    }
+
+    /* Long unbreakable strings (pasted URLs) must wrap rather than force the
+     * row wider than the screen. */
+    .item__title,
+    .item__body-preview,
+    .item__body-preview a {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    /* Waiting items are dimmed and un-dim on hover; touch can't hover, so
+     * keep them legible. */
+    .item--status-waiting .item__title,
+    .item--status-waiting .item__meta,
+    .item--status-waiting .item__body-preview,
+    .item--status-waiting .item__actions {
+        opacity: 0.75;
+    }
+
+    /* Edit form: one field per row. */
+    .edit-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Calendar: the grid already shrinks its tracks to fit (see .cal-grid);
+     * just tighten the cell sizing for the narrow viewport. */
+    .cal-cell {
+        min-height: 4rem;
+        padding: 0.25rem 0.3rem;
+    }
+
+    .cal-dow {
+        padding: 0.3rem 0.2rem;
+        letter-spacing: 0.06em;
+    }
+
+    .cal-chip {
+        font-size: var(--type-xs);
+        padding-left: 0.2rem;
+    }
+}

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}GTD{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ static_url('style.css') }}">
+    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
+    <script src="{{ static_url('app.js') }}" defer></script>
+</head>
+<body data-view-active="{{ active or '' }}">
+<div class="shell {% block shell_class %}shell--narrow{% endblock %}">
+
+    <header class="masthead">
+        <div class="masthead__left">
+            <a class="masthead__brand" href="{{ url('today') }}">G<span class="dot">.</span>T<span class="dot">.</span>D<span class="dot">.</span></a>
+            <span class="masthead__date">{{ today.strftime('%A · %d %b') }}</span>
+        </div>
+        <div class="masthead__actions">
+            <a class="masthead__link {% if active == 'projects_and_goals' %}is-active{% endif %}" href="{{ url('projects_and_goals_page') }}">Projects &amp; goals</a>
+            <a class="masthead__search {% if active == 'all' %}is-active{% endif %}" href="{{ url('all_items') }}" data-tooltip="Search and filter every item">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg>
+                Search
+            </a>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <div class="nav__group">
+            <span class="nav__label">Active</span>
+            <a class="{% if active == 'inbox' %}is-active{% endif %}" href="{{ url('inbox') }}">Inbox<span class="nav__count">{{ counts.inbox }}</span></a>
+            <a class="{% if active == 'next' %}is-active{% endif %}" href="{{ url('next') }}">Next<span class="nav__count">{{ counts.next }}</span></a>
+            <a class="{% if active == 'projects' %}is-active{% endif %}" href="{{ url('projects') }}">Projects<span class="nav__count">{{ counts.project }}</span></a>
+            <a class="{% if active == 'waiting' %}is-active{% endif %}" href="{{ url('waiting') }}">Waiting<span class="nav__count">{{ counts.waiting }}</span></a>
+            <a class="{% if active == 'tickler' %}is-active{% endif %}" href="{{ url('tickler') }}">Tickler<span class="nav__count">{{ counts.tickler }}</span></a>
+        </div>
+        <div class="nav__group">
+            <span class="nav__label">Holding</span>
+            <a class="{% if active == 'someday' %}is-active{% endif %}" href="{{ url('someday') }}">Someday<span class="nav__count">{{ counts.someday }}</span></a>
+            <a class="{% if active == 'read' %}is-active{% endif %}" href="{{ url('read') }}">Read<span class="nav__count">{{ counts.read_review }}</span></a>
+            <a class="{% if active == 'reference' %}is-active{% endif %}" href="{{ url('reference') }}">Reference<span class="nav__count">{{ counts.reference }}</span></a>
+        </div>
+        <div class="nav__group">
+            <span class="nav__label">Time</span>
+            <a class="{% if active == 'today' %}is-active{% endif %}" href="{{ url('today') }}">Today</a>
+            <a class="{% if active == 'calendar' %}is-active{% endif %}" href="{{ url('calendar') }}">Calendar</a>
+            <a class="{% if active == 'weekly_review' %}is-active{% endif %}" href="{{ url('weekly_review') }}">Weekly Review</a>
+        </div>
+    </nav>
+
+    {% if active == 'inbox' %}
+    <details class="instructions">
+        <summary>Triage instructions</summary>
+        <div class="instructions__body">
+            {{ instructions_html | safe }}
+            <p class="instructions__edit-link">
+                <a href="{{ url('instructions_page') }}">Edit these instructions →</a>
+            </p>
+        </div>
+    </details>
+    {% endif %}
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% from "_item_macros.html" import item_row with context %}
+    <details class="done-section" {% if done_items %}{% endif %}>
+        <summary><span>Done</span> <span class="done-section__count">{{ done_items | length }}</span></summary>
+        {% if done_items %}
+        <ul class="items items--done">
+            {% for item in done_items %}
+                {{ item_row(item, parent_lookup=parent_lookup, index=loop.index0) }}
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="done-section__empty">Nothing done yet. Tick off an item from any list.</div>
+        {% endif %}
+    </details>
+
+    <footer class="footer-note">
+        <span>{{ all_count }} items on file</span>
+        <span>data/.apps/gtd/</span>
+    </footer>
+</div>
+<script type="application/json" id="gtd-picker-data">{{ picker_data | tojson }}</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block shell_class %}{% endblock %}
+{% block title %}Calendar — GTD{% endblock %}
+
+{% block content %}
+<header class="cal-head">
+    <h1><em>{{ month_name }}</em> {{ year }}</h1>
+    <nav>
+        <a href="{{ url('calendar_for', year=prev_year, month=prev_month) }}">← {{ prev_name }}</a>
+        <a href="{{ url('calendar') }}">Today</a>
+        <a href="{{ url('calendar_for', year=next_year, month=next_month) }}">{{ next_name }} →</a>
+    </nav>
+</header>
+
+<div class="cal-grid">
+    {% for dow in day_names %}
+        <div class="cal-dow">{{ dow }}</div>
+    {% endfor %}
+    {% for cell in cells %}
+        <div class="cal-cell {% if not cell.in_month %}cal-cell--out{% endif %} {% if cell.is_today %}cal-cell--today{% endif %}">
+            <div class="cal-cell__num">{{ cell.day }}</div>
+            <div class="cal-cell__items">
+                {% for chip in cell.chips[:4] %}
+                    <a class="cal-chip cal-chip--{{ chip.kind }}" href="{{ chip.href }}" title="{{ chip.title }}">{{ chip.title }}</a>
+                {% endfor %}
+                {% if cell.chips | length > 4 %}
+                    <div class="cal-cell__more">+{{ cell.chips | length - 4 }} more</div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

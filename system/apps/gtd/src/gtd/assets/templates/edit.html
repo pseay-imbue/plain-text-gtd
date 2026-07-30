@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ item.id }} — GTD{% endblock %}
+
+{% block content %}
+<header class="view-head">
+    <h1>Edit</h1>
+    <div class="view-head__meta"><b>{{ item.id }}</b> · {{ item.status.value }}</div>
+</header>
+
+<form class="edit-form" method="post" action="{{ url('save_item', item_id=item.id) }}">
+    <input type="hidden" name="back" value="{{ back_url }}">
+    <label class="edit-form__label">Title</label>
+    <input class="edit-form__title" type="text" name="title" value="{{ item.title }}">
+
+    <div class="edit-form__grid">
+        <div class="edit-form__cell--full">
+            <label class="edit-form__label">Parent project</label>
+            <select name="parent" class="edit-form__input">
+                <option value="">(none)</option>
+                {% for p in projects %}
+                <option value="{{ p.id }}" {% if p.id == item.parent %}selected{% endif %}>{{ p.title }} ({{ p.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="edit-form__cell--full">
+            <label class="edit-form__label">Status</label>
+            <select name="status" class="edit-form__input">
+                {% for s in statuses %}
+                <option value="{{ s.value }}" {% if s == item.status %}selected{% endif %}>{{ s.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="edit-form__label">Due date</label>
+            <input class="edit-form__input edit-form__input--mono" type="date" name="due_date" value="{{ item.due_date.isoformat() if item.due_date else '' }}">
+        </div>
+        <div>
+            <label class="edit-form__label">Start date</label>
+            <input class="edit-form__input edit-form__input--mono" type="date" name="start_date" value="{{ item.start_date.isoformat() if item.start_date else '' }}">
+            <span class="edit-form__hint">Future start date → item lives in Tickler until that day.</span>
+        </div>
+        <div class="edit-form__cell--full">
+            <label class="edit-form__label">Waiting for</label>
+            <input class="edit-form__input" type="text" name="waiting_for" value="{{ item.waiting_for or '' }}">
+        </div>
+    </div>
+
+    <label class="edit-form__label edit-form__label--spaced edit-form__label--inline">
+        <input type="checkbox" name="quick" value="1" {% if item.quick %}checked{% endif %}>
+        2-minute task (rises to the top of Next Actions)
+    </label>
+
+    <label class="edit-form__label edit-form__label--spaced edit-form__label--inline">
+        <input type="checkbox" name="is_project" value="1" {% if item.is_project %}checked{% endif %}>
+        This is a project (it has sub-actions; can sit in any status, including Someday)
+    </label>
+
+    <label class="edit-form__label edit-form__label--spaced">Priority</label>
+    <select name="priority" class="edit-form__input">
+        {% for p in all_priorities %}
+        <option value="{{ p.value }}" {% if p == item.priority %}selected{% endif %}>{{ p.value }}</option>
+        {% endfor %}
+    </select>
+
+    <label class="edit-form__label edit-form__label--spaced">Repeat on</label>
+    <div class="weekday-picker" data-recur-autosave-url="{{ url('set_recur', item_id=item.id) }}">
+        {% set day_pairs = [(0, 'M', 'Mon'), (1, 'T', 'Tue'), (2, 'W', 'Wed'), (3, 'T', 'Thu'), (4, 'F', 'Fri'), (5, 'S', 'Sat'), (6, 'S', 'Sun')] %}
+        {% for n, short, full in day_pairs %}
+        <label class="weekday-picker__day {% if n in item.recur_weekdays %}is-on{% endif %}" title="{{ full }}">
+            <input type="checkbox" name="recur_weekdays" value="{{ n }}" {% if n in item.recur_weekdays %}checked{% endif %}>
+            <span>{{ short }}</span>
+        </label>
+        {% endfor %}
+    </div>
+    <span class="edit-form__hint">Click days to toggle — saves immediately. Checking the row's box on a recurring item bumps start_date to the next listed day instead of marking it done.</span>
+
+    <label class="edit-form__label edit-form__label--spaced">Tags (comma-separated)</label>
+    <input class="edit-form__input edit-form__input--mono" type="text" name="tags" value="{{ item.tags | join(', ') }}">
+
+    <label class="edit-form__label edit-form__label--spaced">Notes</label>
+    <textarea class="edit-form__textarea" name="body" rows="10">{{ item.body }}</textarea>
+
+    <div class="edit-form__actions">
+        <a class="act" href="{{ back_url }}">Cancel</a>
+        <button class="act act--primary" type="submit">Save</button>
+    </div>
+</form>
+
+<form class="edit-form__delete" method="post" action="{{ url('delete_item', item_id=item.id) }}" onsubmit="return confirm('Delete this item permanently?')">
+    <input type="hidden" name="back" value="{{ back_url }}">
+    <button class="act act--danger" type="submit">Delete this item</button>
+</form>
+{% endblock %}
