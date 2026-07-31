@@ -10,6 +10,13 @@ ruled-paper "commonplace book" you open in your browser. It's built to be
 edited from either side — by you in the UI or on disk, and by an AI agent in
 chat — without surprises.
 
+<p align="center">
+  <a href="https://boweiliu.github.io/open-in-minds/?git_url=https://github.com/pseay-imbue/plain-text-gtd"><img alt="Open in Minds" height="64" src="https://img.shields.io/badge/Open%20in%20Minds-D8D1C0?style=for-the-badge"></a>
+</p>
+
+Didn't work? Create a Minds workspace and paste this to your agent:
+`/use-inspiration https://github.com/pseay-imbue/plain-text-gtd`
+
 ![Next Actions](docs/next-actions.png)
 
 ## What it is
